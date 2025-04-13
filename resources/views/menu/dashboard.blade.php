@@ -84,10 +84,13 @@
         <div class="header">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h1 style="color: #4f52ba; font-size: 20px;">Dasbor</h1>
+                @if(auth()->user()->role == '1' || auth()->user()->role == '2')
                 <!-- Menghapus tombol "Tambah Foto" -->
                 <!-- <button class="button" style="margin-left: auto;" onclick="showModal('uploadModal')">Tambah Foto</button> -->
+                @endif
+                <button class="add-button" onclick="openAddPendaftaranModal()">Daftar</button>
             </div>
-
+        
             <div class="welcome-banner" style="background-color: #f4f5ff; padding: 20px; border-radius: 10px; display: flex; align-items: center; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
                 <img src="{{ asset('img/avatars/1.png') }}" alt="Foto Profil" style="width: 80px; height: 80px; border-radius: 50%; margin-right: 15px; border: 2px solid #4f52ba;">
                 <div>
@@ -97,8 +100,7 @@
             </div>
         </div>
 
-
-        <!-- Konten lainnya tetap sama -->
+        @if(auth()->user()->role == '1' || auth()->user()->role == '2')
         <div class="card-grid">
             <div class="card-counter device-icon">
                 <i class="fa-solid fa-city"></i>
@@ -149,5 +151,159 @@
     </div>
 </div>
 
+@include('menu.pendaftaran-vms')
+
+<script>
+    document.getElementById('uploadPhotoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch('/upload-photo', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                const photoGallery = document.getElementById('photoGallery');
+                const card = `
+                    <div class="col-md-3 mb-4">
+                        <div class="card">
+                            <img class="card-img-top" src="${data.photoUrl}" alt="Card image cap" style="height: 150px; object-fit: cover;" onclick="showImage('${data.photoUrl}', '${data.title}')">
+                            <div class="card-body">
+                                <h5 class="card-title">${data.title}</h5>
+                                <p class="card-text">${data.text}</p>
+                            </div>
+                            <div class="card-footer">
+                                <small class="text-muted">Uploaded on: ${data.timestamp}</small>
+                                <form action="/photos/${data.id}" method="POST" style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                photoGallery.insertAdjacentHTML('beforeend', card);
+                $('#uploadModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Foto berhasil diupload.',
+                });
+                  // Tutup modal
+                  closeModal('uploadModal'); // Menutup modal upload
+                // Reload halaman
+                location.reload(); // Reload halaman untuk memperbarui galeri foto
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: 'Gagal mengupload foto: ' + data.message,
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Terjadi kesalahan!',
+                text: 'Kesalahan saat mengupload foto: ' + error.message,
+            });
+        });
+    });
+
+    function showImage(imageUrl, title) {
+        document.getElementById('modalImage').src = imageUrl;
+        document.getElementById('modalImageTitle').innerText = title;
+        document.getElementById('imageModal').style.display = 'block';
+        
+        // Sembunyikan elemen yang ingin disembunyikan
+        document.querySelectorAll('.header, .card-grid').forEach(element => {
+            element.classList.add('hidden'); // Menambahkan kelas hidden
+        });
+    }
+
+    // Close modal when clicking outside of the modal content
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('uploadModal') || event.target == document.getElementById('imageModal')) {
+            closeModal('uploadModal');
+            closeModal('imageModal');
+        }
+    }
+
+    document.querySelectorAll('.delete-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const form = this.closest('.delete-form');
+            const photoTitle = this.getAttribute('data-title'); // Ambil judul foto dari data-title
+
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: `Anda akan menghapus foto: ${photoTitle}`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#4f52ba',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // Kirim form jika pengguna mengkonfirmasi
+                }
+            });
+        });
+    });
+
+    // Menyembunyikan teks di atas modal saat modal dibuka
+    function showModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+        document.querySelector('.header').classList.add('hidden'); // Sembunyikan elemen header
+    }
+
+    // Menutup modal dan menampilkan kembali teks
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        
+        // Tampilkan kembali elemen yang disembunyikan
+        document.querySelectorAll('.header, .card-grid').forEach(element => {
+            element.classList.remove('hidden'); // Menghapus kelas hidden
+        });
+    }
+
+    // Event listener untuk tombol modal
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.querySelector('.close').addEventListener('click', function() {
+            closeModal(modal.id);
+        });
+    });
+
+    // Menampilkan notifikasi setelah penghapusan
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Sukses',
+            text: '{{ session('success') }}',
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Kesalahan',
+            text: '{{ session('error') }}',
+        });
+    @endif
+</script>
 @endsection
 
