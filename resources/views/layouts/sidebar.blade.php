@@ -244,6 +244,11 @@
                 <li>
                     <a href="{{ route('histori') }}"><span class="material-symbols-outlined"> history </span>Histori</a>
                 </li>
+                <li>
+                    <a href="{{ route('menu.user.index') }}">
+                        <span class="material-symbols-outlined"> group </span>Users
+                    </a>
+                </li>
             <h4>
                 <span>Aset</span>
                 <div class="menu-separator"></div>
