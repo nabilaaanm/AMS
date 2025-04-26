@@ -4,7 +4,8 @@
 <head>
     <link rel="stylesheet" href="{{ asset('css/tabelaset.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <style>
@@ -117,31 +118,47 @@ table tbody tr:hover {
 
 /* Container style */
 .container {
-    padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 15px;
 }
 
 /* Header style */
 .header {
-    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px 10px;
+    width: 100%;
 }
 
 .header h1 {
-    margin: 0;
     color: #4f52ba;
     font-size: 24px;
+    margin: 0;
+    padding: 10px 0;
 }
 
-/* Tombol tambah user */
-.btn-primary {
+.add-button {
     background-color: #4f52ba;
+    color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    font-size: 13px;
+    width: 150px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
 }
 
-.btn-primary:hover {
-    background-color: #3a3e9b;
+.add-button:hover {
+    background-color: #3e4a9a;
 }
 
 /* Style untuk modal delete */
@@ -178,122 +195,149 @@ table tbody tr:hover {
 #delete_user_email {
     color: #dc3545;
 }
+
+.main-content {
+    position: relative;
+    z-index: 5;
+    width: 95%;
+    padding: 15px;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin: 15px auto;
+}
 </style>
 
 <div class="main">
-    <div class="container">
-        @if(session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-        
-        @if(session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        {{-- Form untuk Create/Edit User --}}
-        @if(isset($editUser))
-            <div class="card mb-4">
-                <h4>Edit User</h4>
-                <form action="{{ route('user.update', $editUser->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Nama Depan</label>
-                                <input type="text" name="first_name" class="form-control" value="{{ $editUser->first_name }}" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Nama Belakang</label>
-                                <input type="text" name="last_name" class="form-control" value="{{ $editUser->last_name }}" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" class="form-control" value="{{ $editUser->email }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Password (Kosongkan jika tidak ingin mengubah)</label>
-                        <input type="password" name="password" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>No. HP</label>
-                        <input type="text" name="mobile_number" class="form-control" value="{{ $editUser->mobile_number }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Perusahaan</label>
-                        <input type="text" name="company" class="form-control" value="{{ $editUser->company }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select name="role" class="form-control" required>
-                            <option value="admin" {{ $editUser->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                            <option value="user" {{ $editUser->role == 'user' ? 'selected' : '' }}>User</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Update User</button>
-                    <a href="{{ route('user.index') }}" class="btn btn-secondary">Batal</a>
-                </form>
-            </div>
-        @else
-            <div class="header">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h1>Users</h1>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createUserModal">
-                        <i class="fas fa-plus"></i> Tambah User
-                    </button>
+    <div class="main-content">
+        <div class="container">
+            @if(session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
                 </div>
-            </div>
-        @endif
+            @endif
+            
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
 
-        {{-- Tabel User --}}
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if($user->isEmpty())
+            {{-- Form untuk Create/Edit User --}}
+            @if(isset($editUser))
+                <div class="card mb-4 p-4">
+                    <h4>Edit User</h4>
+                    <form action="{{ route('user.update', $editUser->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Nama</label>
+                                    <input type="text" name="name" class="form-control" value="{{ $editUser->name }}" required>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ $editUser->email }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password (Kosongkan jika tidak ingin mengubah)</label>
+                            <input type="password" name="password" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>No. HP</label>
+                            <input type="text" name="mobile_number" class="form-control" value="{{ $editUser->mobile_number }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Region</label>
+                            <select name="region" class="form-control" required>
+                                <option value="">Pilih Region</option>
+                                @foreach($regions as $region)
+                                    <option value="{{ $region->nama_region }}" {{ isset($editUser) && $editUser->region == $region->nama_region ? 'selected' : '' }}>
+                                        {{ $region->nama_region }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select name="role" class="form-control" required>
+                                <option value="">Pilih Role</option>
+                                <option value="1" {{ $editUser->role == '1' ? 'selected' : '' }}>Super Admin</option>
+                                <option value="2" {{ $editUser->role == '2' ? 'selected' : '' }}>Admin</option>
+                                <option value="3" {{ $editUser->role == '3' ? 'selected' : '' }}>User</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update User</button>
+                        <a href="{{ route('user.index') }}" class="btn btn-secondary">Batal</a>
+                    </form>
+                </div>
+            @else
+                <div class="header">
+                    <h1>Users</h1>
+                    <div class="btn-group">
+                        <button type="button" class="add-button" data-toggle="modal" data-target="#createUserModal">
+                            Tambah User
+                        </button>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Tabel User --}}
+            <div class="table-responsive">
+                <table>
+                    <thead>
                         <tr>
-                            <td colspan="4" class="no-data">Tidak ada data pengguna.</td>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Aksi</th>
                         </tr>
-                    @else
-                        @foreach($user as $u)
+                    </thead>
+                    <tbody>
+                        @if($users->isEmpty())
                             <tr>
-                                <td>{{ $u->id }}</td>
-                                <td>{{ $u->email }}</td>
-                                <td>{{ $u->role }}</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button type="button" class="edit-btn" 
-                                                onclick="editUser({{ $u->id }}, '{{ $u->first_name }}', '{{ $u->last_name }}', 
-                                                   '{{ $u->email }}', '{{ $u->mobile_number }}', 
-                                                   '{{ $u->company }}', '{{ $u->role }}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="delete-btn" 
-                                                onclick="deleteUser({{ $u->id }}, '{{ $u->email }}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
+                                <td colspan="4" class="no-data">Tidak ada data pengguna.</td>
                             </tr>
-                        @endforeach
-                    @endif
-                </tbody>
-            </table>
+                        @else
+                            @foreach($users as $u)
+                                <tr>
+                                    <td>{{ $u->id }}</td>
+                                    <td>{{ $u->email }}</td>
+                                    <td>
+                                        @switch($u->role)
+                                            @case(1)
+                                                Super Admin
+                                                @break
+                                            @case(2)
+                                                Admin
+                                                @break
+                                            @case(3)
+                                                User
+                                                @break
+                                            @default
+                                                Unknown Role
+                                        @endswitch
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button type="button" class="edit-btn" 
+                                                    onclick="editUser({{ $u->id }}, '{{ $u->name }}', '{{ $u->email }}', '{{ $u->mobile_number }}', '{{ $u->region }}', '{{ $u->role }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="delete-btn" 
+                                                    onclick="deleteUser('{{ $u->id }}', '{{ $u->email }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -308,20 +352,25 @@ table tbody tr:hover {
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{{ route('user.store') }}" method="POST">
+            <form id="createUserForm" action="{{ route('user.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <div class="form-group">
-                        <label>Nama Depan</label>
-                        <input type="text" name="first_name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nama Belakang</label>
-                        <input type="text" name="last_name" class="form-control" required>
+                        <label>Nama</label>
+                        <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" name="email" class="form-control" required>
+                        <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                     </div>
                     <div class="form-group">
                         <label>Password</label>
@@ -329,17 +378,33 @@ table tbody tr:hover {
                     </div>
                     <div class="form-group">
                         <label>No. HP</label>
-                        <input type="text" name="mobile_number" class="form-control" required>
+                        <input type="text" name="mobile_number" id="mobile_number" class="form-control" 
+                               value="{{ old('mobile_number') }}" 
+                               oninput="validateMobileNumber(this)"
+                               maxlength="15" 
+                               required>
+                        <small class="text-danger" id="mobile_number_error" style="display: none;">
+                            Nomor telepon tidak boleh lebih dari 15 digit
+                        </small>
                     </div>
                     <div class="form-group">
-                        <label>Perusahaan</label>
-                        <input type="text" name="company" class="form-control" required>
+                        <label>Region</label>
+                        <select name="region" class="form-control" required>
+                            <option value="">Pilih Region</option>
+                            @foreach($regions as $region)
+                                <option value="{{ $region->nama_region }}" {{ old('region') == $region->nama_region ? 'selected' : '' }}>
+                                    {{ $region->nama_region }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Role</label>
                         <select name="role" class="form-control" required>
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
+                            <option value="">Pilih Role</option>
+                            <option value="1" {{ old('role') == '1' ? 'selected' : '' }}>Super Admin</option>
+                            <option value="2" {{ old('role') == '2' ? 'selected' : '' }}>Admin</option>
+                            <option value="3" {{ old('role') == '3' ? 'selected' : '' }}>User</option>
                         </select>
                     </div>
                 </div>
@@ -367,12 +432,8 @@ table tbody tr:hover {
                 @method('PUT')
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Nama Depan</label>
-                        <input type="text" name="first_name" id="edit_first_name" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nama Belakang</label>
-                        <input type="text" name="last_name" id="edit_last_name" class="form-control" required>
+                        <label>Nama</label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label>Email</label>
@@ -387,14 +448,22 @@ table tbody tr:hover {
                         <input type="text" name="mobile_number" id="edit_mobile_number" class="form-control" required>
                     </div>
                     <div class="form-group">
-                        <label>Perusahaan</label>
-                        <input type="text" name="company" id="edit_company" class="form-control" required>
+                        <label>Region</label>
+                        <select name="region" id="edit_region" class="form-control" required>
+                            <option value="">Pilih Region</option>
+                            @if(isset($regions))
+                                @foreach($regions as $region)
+                                    <option value="{{ $region->nama_region }}">{{ $region->nama_region }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Role</label>
                         <select name="role" id="edit_role" class="form-control" required>
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
+                            <option value="1">Super Admin</option>
+                            <option value="2">Admin</option>
+                            <option value="3">User</option>
                         </select>
                     </div>
                 </div>
@@ -435,14 +504,105 @@ table tbody tr:hover {
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-function editUser(id, firstName, lastName, email, mobileNumber, company, role) {
-    $('#edit_first_name').val(firstName);
-    $('#edit_last_name').val(lastName);
+function validateMobileNumber(input) {
+    // Hapus karakter non-digit
+    input.value = input.value.replace(/\D/g, '');
+    
+    const mobileNumberError = document.getElementById('mobile_number_error');
+    const submitButton = document.querySelector('#createUserForm button[type="submit"]');
+    
+    if (input.value.length > 15) {
+        input.value = input.value.slice(0, 15); // Potong ke 15 digit
+        mobileNumberError.style.display = 'block';
+        submitButton.disabled = true;
+    } else {
+        mobileNumberError.style.display = 'none';
+        submitButton.disabled = false;
+    }
+}
+
+$(document).ready(function() {
+    // Handle form submit untuk create user
+    $('#createUserForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Validasi nomor telepon sebelum submit
+        const mobileNumber = document.getElementById('mobile_number').value;
+        if (mobileNumber.length > 15) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Nomor telepon tidak boleh lebih dari 15 digit',
+                icon: 'error',
+                confirmButtonColor: '#4f52ba'
+            });
+            return false;
+        }
+        
+        $('#createUserModal').modal('hide');
+        
+        Swal.fire({
+            title: 'Konfirmasi',
+            text: "Apakah Anda yakin ingin menambahkan user ini?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f52ba',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, simpan!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: 'User berhasil ditambahkan.',
+                            icon: 'success',
+                            confirmButtonColor: '#4f52ba',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        Swal.fire('Error!', errorMessage, 'error');
+                        $('#createUserModal').modal('show');
+                    }
+                });
+            } else {
+                $('#createUserModal').modal('show');
+            }
+        });
+    });
+
+    // Auto hide alert after 3 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut('slow');
+    }, 3000);
+
+    // Jika ada form edit user di halaman (bukan modal), populate region
+    @if(isset($editUser))
+        $('#edit_region').val('{{ $editUser->region }}');
+    @endif
+});
+
+function editUser(id, name, email, mobileNumber, region, role) {
+    $('#edit_name').val(name);
     $('#edit_email').val(email);
     $('#edit_mobile_number').val(mobileNumber);
-    $('#edit_company').val(company);
+    $('#edit_region').val(region);
     $('#edit_role').val(role);
     
     $('#editUserForm').attr('action', `/user/${id}`);
@@ -450,17 +610,109 @@ function editUser(id, firstName, lastName, email, mobileNumber, company, role) {
 }
 
 function deleteUser(id, email) {
-    $('#delete_user_email').text(email);
-    $('#deleteUserForm').attr('action', `/user/${id}`);
-    $('#deleteUserModal').modal('show');
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: `Apakah Anda yakin ingin menghapus user dengan email: ${email}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/user/${id}`,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: response.message || 'User berhasil dihapus.',
+                            icon: 'success',
+                            confirmButtonColor: '#4f52ba',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error!', response.message || 'Gagal menghapus user.', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error response:', xhr.responseJSON);
+                    let errorMessage = 'Gagal menghapus user.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error!', errorMessage, 'error');
+                }
+            });
+        }
+    });
 }
 
-// Tambahkan script untuk menangani pesan alert
-$(document).ready(function() {
-    // Auto hide alert after 3 seconds
-    setTimeout(function() {
-        $('.alert').fadeOut('slow');
-    }, 3000);
+$('#editUserForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const mobileNumber = $('#edit_mobile_number').val();
+    if (mobileNumber.length > 15) {
+        Swal.fire({
+            title: 'Error!',
+            text: 'Nomor telepon tidak boleh lebih dari 15 digit',
+            icon: 'error',
+            confirmButtonColor: '#4f52ba'
+        });
+        return false;
+    }
+    
+    $('#editUserModal').modal('hide');
+    
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: "Apakah Anda yakin ingin mengupdate user ini?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4f52ba',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, update!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'User berhasil diupdate.',
+                        icon: 'success',
+                        confirmButtonColor: '#4f52ba',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error!', errorMessage, 'error');
+                    $('#editUserModal').modal('show');
+                }
+            });
+        } else {
+            $('#editUserModal').modal('show');
+        }
+    });
 });
 </script>
 @endsection

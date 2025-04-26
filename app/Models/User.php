@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Region;
 
 class User extends Authenticatable
 {
@@ -23,12 +24,11 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'first_name',
-        'last_name',
+        'name',
         'email',
         'password',
         'mobile_number',
-        'company',
+        'region',
         'role'
     ];
     public $timestamps = false;
@@ -51,11 +51,12 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'mobile_number' => 'integer',
+        'role' => 'integer',
     ];
 
-    
-    public function user()
+    public function region()
     {
-        return $this->hasOne(User::class, 'email', 'email');
+        return $this->belongsTo(Region::class);
     }
 }

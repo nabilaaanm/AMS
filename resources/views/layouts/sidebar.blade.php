@@ -246,9 +246,10 @@
                 </li>
 
                 <li>
-                    <a href="{{ route('menu.user.index') }}">
-                        <span class="material-symbols-outlined"> group </span>Users
-                    </a>
+                    <a href="{{ route('menu.user.index') }}"> <span class="material-symbols-outlined"> group </span>Users</a>
+                </li>
+                <li>
+                    <a href="{{ route('nda.index') }}"><span class="material-symbols-outlined"> description </span>NDA</a>
                 </li>
 
             @if(auth()->user()->role == '1' || auth()->user()->role == '2')
