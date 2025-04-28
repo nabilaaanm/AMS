@@ -24,6 +24,7 @@ use App\Models\DataAlatUkur;
 use App\Models\Poc;
 use App\Http\Controllers\JaringanController;
 use App\Http\Controllers\SemantikController;
+use App\Http\Controllers\NdaController;
 
 
 Route::get('/', function () {
@@ -265,4 +266,20 @@ Route::post('/rack/store', [RackController::class, 'store'])->name('rack.store')
 
     // Semantik
     Route::get('/semantik', [SemantikController::class, 'semantik'])->name('semantik');
+
+    // NDA
+    Route::get('/nda', [NdaController::class, 'index'])->name('nda.index');
+    Route::post('/nda', [NdaController::class, 'store'])->name('nda.store');
+    Route::get('/nda/download/{id}', [NdaController::class, 'download'])->name('nda.download');
+    Route::put('/nda/{nda}', [NdaController::class, 'update'])->name('nda.update');
+    Route::delete('/nda/{nda}', [NdaController::class, 'destroy'])->name('nda.destroy');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/user', [UserController::class, 'index'])->name('menu.user.index');
+    Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
+    Route::post('/user', [UserController::class, 'store'])->name('user.store');
+    Route::get('/user/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
+    Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
+    Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 });
