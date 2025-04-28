@@ -47,6 +47,15 @@ class UsersTableSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'name' => 'Aurellia Aca',
+                'email' => 'aure77ia@gmail.com',
+                'password' => Hash::make('password123'),
+                'role' => 3,
+                'email_verified_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }
